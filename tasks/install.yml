@@ -1,0 +1,122 @@
+---
+- name: install | ensure redis group is set
+  group:
+    name: redis
+    gid: 1050
+    system: true
+
+- name: install | ensure redis user is set
+  user:
+    name: redis
+    uid: 1050
+    system: true
+    group: redis
+    comment: 'Redis Database Server'
+    home: /var/lib/redis
+    create_home: false
+    shell: /sbin/nologin
+
+- block:
+
+    - name: install | epel and remi rpm gpg key
+      rpm_key:
+        key: "{{ item }}"
+      loop:
+        - https://rpms.remirepo.net/RPM-GPG-KEY-remi2018
+        - https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-8
+
+    - name: install | epel and remi repos
+      dnf:
+        name: "{{ item }}"
+      loop:
+        - epel-release
+        - https://rpms.remirepo.net/enterprise/remi-release-8.rpm
+
+    - name: install | enable remi repo
+      ini_file:
+        path: /etc/yum.repos.d/remi.repo
+        section: remi
+        option: enabled
+        value: '1'
+        mode: '0644'
+
+    - name: install | dnf module template
+      template:
+        src: redis.module.j2
+        dest: /etc/dnf/modules.d/redis.module
+        mode: '0664'
+        owner: root
+        group: root
+
+  when: redis_remi_repo
+
+- name: install | redis
+  dnf:
+    name: redis
+  register: redis_install
+
+- name: install | stat config dir
+  stat:
+    path: "{{ redis_conf | dirname }}"
+  register: redis_check_config_dir
+
+- name: install | stat config file
+  stat:
+    path: "{{ redis_conf }}"
+  register: redis_check_config_file
+
+- name: install | remove default config file
+  file:
+    state: absent
+    path: "/etc/{{ item }}"
+  loop:
+    - redis.conf
+    - redis-sentinel.conf
+  when:
+    - "'/etc/redis.conf' not in redis_conf"
+    - not redis_check_config_file.stat.exists
+
+- name: install | config dir
+  file:
+    state: directory
+    path: "{{ redis_conf | dirname }}"
+    owner: redis
+    group: redis
+    mode: '0770'
+  when: not redis_check_config_dir.stat.exists
+
+- block:
+
+    - name: install | config only for first time
+      template:
+        src: redis.conf.j2
+        dest: "{{ redis_conf }}"
+        mode: '0775'
+        owner: redis
+        group: redis
+      register: redis_set_config
+      when: redis_install.changed
+
+    - name: install | ensure systemd file is set
+      template:
+        src: redis.service.j2
+        dest: /usr/lib/systemd/system/redis.service
+        mode: '0664'
+        owner: root
+        group: root
+      register: redis_set_service
+
+    - name: install | reload daemons when service file changed
+      systemd:
+        daemon_reload: true
+      when: redis_set_service.changed
+
+    - name: install | restart redis
+      service:
+        name: redis
+        state: restarted
+      when:
+        - redis_restart_on_config_change
+        - redis_set_service.changed or redis_set_config.changed
+
+  when: not r_arb

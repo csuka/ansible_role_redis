@@ -1,0 +1,34 @@
+{{ ansible_managed | comment }}
+
+[Unit]
+Description=Redis persistent key-value database
+Wants=network.target
+After=network.target
+Documentation=https//redis.io/documentation, man:redis-server(1)
+
+[Service]
+Type=notify
+ExecStart=/usr/bin/redis-server {{ redis_conf }} --daemonize no --supervised systemd
+ExecStop=/usr/libexec/redis-shutdown
+PIDFile=/run/redis/redis-server.pid
+User=redis
+Group=redis
+RuntimeDirectory=redis
+RuntimeDirectoryMode=2755
+TimeoutStartSec=infinity
+TimeoutStopSec=infinity
+UMask=0077
+PrivateTmp=yes
+LimitNOFILE=65535
+ReadOnlyDirectories=/
+WorkingDirectory={{ redis_dbdir }}
+ReadWriteDirectories=-{{ redis_dbdir }}
+ReadWriteDirectories=-/var/log/redis
+ReadWriteDirectories=-/var/run/redis
+
+ProtectSystem=true
+ReadWriteDirectories=-/etc/redis
+
+[Install]
+WantedBy=multi-user.target
+Alias=redis-server.service

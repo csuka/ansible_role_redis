@@ -1,0 +1,64 @@
+{{ ansible_managed | comment }}
+
+protected-mode no
+supervised systemd
+daemonize no
+user default on nopass ~* +@all
+sentinel current-epoch 0
+
+# bind {{ redis_sentinel.enabled }} # moet redis_sentinel.ip worden misschien
+
+port 26379
+
+pidfile "/var/run/redis-sentinel.pid"
+
+logfile "{{ redis_sentinel_log }}"
+
+# sentinel announce-ip 1.2.3.4
+
+dir {{ redis_dbdir }}
+
+sentinel myid {{ redis_sentinel.id }}
+
+sentinel monitor mymaster {% if r_master %}127.0.0.1{% else %}{{ redis_master_ip }}{% endif %} 6379 2
+
+sentinel down-after-milliseconds mymaster 5000
+
+sentinel failover-timeout mymaster 10000
+
+# sentinel auth-pass mymaster MySUPER--secret-0123passw0rd
+
+# sentinel auth-user <master-name> <username>
+
+# sentinel down-after-milliseconds <master-name> <milliseconds>
+
+sentinel deny-scripts-reconfig yes
+
+# requirepass <password>
+
+# sentinel parallel-syncs <master-name> <numreplicas>
+
+# sentinel failover-timeout <master-name> <milliseconds>
+
+sentinel config-epoch mymaster 0
+
+# sentinel notification-script mymaster /var/redis/notify.sh
+
+# sentinel client-reconfig-script <master-name> <script-path>
+
+# <master-name> <role> <state> <from-ip> <from-port> <to-ip> <to-port>
+
+# <state> is currently always "failover"
+# <role> is either "leader" or "observer"
+
+# sentinel client-reconfig-script mymaster /var/redis/reconfig.sh
+
+sentinel leader-epoch mymaster 0
+
+# SENTINEL rename-command mymaster CONFIG GUESSME
+
+# SENTINEL rename-command mymaster CONFIG CONFIG
+
+{% for key, value in redis_sentinel_extra_commands.items() %}
+{{ key }} {{ value }}
+{% endfor %}

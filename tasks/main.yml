@@ -1,0 +1,25 @@
+---
+# do not skip assert, this is required
+- include_tasks: assert.yml
+  tags:
+    - always
+    - assert
+
+- include_tasks: install.yml
+  tags: install
+
+- include_tasks: kernel.yml
+  tags:
+    - kernel
+    - molecule-notest
+  when: not r_arb
+
+- name: main | ensure redis is started and enabled
+  service:
+    name: redis
+    state: started
+    enabled: true
+  when: not r_arb
+
+- include_tasks: sentinel.yml
+  when: redis_sentinel.enabled

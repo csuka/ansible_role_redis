@@ -1,0 +1,35 @@
+---
+- name: kernel | ensure overcommit memory is set in sysctl
+  sysctl:
+    name: vm.overcommit_memory
+    value: '1'
+  register: redis_overcommit
+
+- name: kernel | enable overcommit during runtime
+  shell: sysctl vm.overcommit_memory=1
+  when: redis_overcommit.changed
+
+- name: kernel | set somaxconn
+  sysctl:
+    name: net.core.somaxconn
+    value: "{{ redis_tcp_backlog }}"
+  register: redis_somaxconn
+
+- name: kernel | set enable somaxconn during runtime
+  shell: "sysctl net.core.somaxconn={{ redis_tcp_backlog }}"
+  when: redis_somaxconn.changed
+
+- name: kernel | ensure service file to disable THP is set
+  template:
+    src: disable-thp.service.j2
+    dest: /etc/systemd/system/disable-transparent-huge-pages.service
+    mode: '0664'
+    group: root
+    owner: root
+  register: redis_disable_thp
+
+- name: kernel | execute command to disable THP when service file changed
+  shell: |
+    set -o pipefail &&
+    echo never | tee /sys/kernel/mm/transparent_hugepage/enabled > /dev/null
+  when: redis_disable_thp.changed

@@ -1,0 +1,129 @@
+---
+# remi repo has version 6.
+# default repo has version 5.
+redis_version: 6.2
+redis_remi_repo: true
+
+# or "{{ ansible_default_ipv4.address }}"
+redis_ip: 127.0.0.1
+redis_port: 6379
+redis_unixsocket: /var/run/redis/redis.sock
+redis_timeout: 300
+
+redis_logfile: /var/log/redis/redis.log
+redis_loglevel: notice
+
+redis_databases: 16
+
+# Set to an empty set to disable persistence (saving the DB to disk).
+redis_save:
+  - 900 1
+  - 300 10
+  - 60 10000
+
+redis_daemon: redis
+
+redis_conf: /etc/redis/redis.conf
+
+redis_rdbcompression: "yes"
+redis_dbfilename: dump.rdb
+redis_dbdir: /var/lib/redis
+
+redis_restart_on_config_change: false
+
+redis_maxmemory: 1073741824  # 1gb
+redis_maxmemory_policy: noeviction
+redis_maxmemory_samples: 5
+redis_maxclients: 128
+redis_tcp_backlog: '511'
+redis_tcp_keepalive: 300
+
+redis_dbcompression: "yes"
+redis_dbchecksum: "yes"
+
+redis_appendonly: "no"
+redis_appendfsync: everysec
+redis_delsyncfiles: "no"
+appendfilename: "appendonly.aof"
+
+# add extra include files for local configuration/overrides
+redis_includes: []
+
+# require authentication to Redis with a password
+redis_requirepass: ''
+
+# disable certain Redis commands for security reasons
+redis_disabled_commands: []
+#  - FLUSHDB
+#  - FLUSHALL
+#  - KEYS
+#  - PEXPIRE
+#  - DEL
+#  - CONFIG
+#  - SHUTDOWN
+#  - BGREWRITEAOF
+#  - BGSAVE
+#  - SAVE
+#  - SPOP
+#  - SREM
+#  - RENAME
+#  - DEBUG
+
+redis_client_output_buffer_limit:
+  - 'normal 0 0 0'
+  - 'replica 256mb 64mb 60'
+  - 'pubsub 32mb 8mb 60'
+
+redis_extra_commands:
+  replica-serve-stale-data: "yes"
+  replica-read-only: "yes"
+  repl-diskless-sync: "no"
+  repl-diskless-sync-delay: 5
+  repl-diskless-load: disabled
+  repl-disable-tcp-nodelay: "no"
+  replica-priority: 100
+  acllog-max-len: 128
+  lazyfree-lazy-eviction: "no"
+  lazyfree-lazy-expire: "no"
+  lazyfree-lazy-server-del: "no"
+  replica-lazy-flush: "no"
+  lazyfree-lazy-user-del: "no"
+  oom-score-adj: "no"
+  oom-score-adj-values: '0 200 800'
+  no-appendfsync-on-rewrite: "no"
+  auto-aof-rewrite-percentage: 100
+  auto-aof-rewrite-min-size: 64mb
+  aof-load-truncated: "yes"
+  aof-use-rdb-preamble: "yes"
+  lua-time-limit: 5000
+  slowlog-log-slower-than: 10000
+  slowlog-max-len: 128
+  latency-monitor-threshold: 0
+  hash-max-ziplist-entries: 512
+  hash-max-ziplist-value: 64
+  list-max-ziplist-size: -2
+  list-compress-depth: 0
+  set-max-intset-entries: 512
+  zset-max-ziplist-entries: 128
+  zset-max-ziplist-value: 64
+  hll-sparse-max-bytes: 3000
+  stream-node-max-bytes: 4096
+  stream-node-max-entries: 100
+  activerehashing: "yes"
+  hz: 10
+  dynamic-hz: "yes"
+  aof-rewrite-incremental-fsync: "yes"
+  rdb-save-incremental-fsync: "yes"
+  jemalloc-bg-thread: "yes"
+
+# Redis sentinel configuration
+redis_sentinel:
+  enabled: false
+  role: master  # slave or arbiter
+  ip: "{{ ansible_default_ipv4.address }}"
+  # the ID value must differ for each host
+  id: 0123456789abcdefghijklmnopqrstuvwxyz1234
+
+redis_sentinel_conf: "{{ redis_conf | dirname }}/sentinel.conf"
+redis_sentinel_log: "{{ redis_logfile | dirname }}/sentinel.log"
+redis_sentinel_extra_commands: {}

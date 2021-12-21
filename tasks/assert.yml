@@ -1,0 +1,114 @@
+---
+- name: assert | set amount of hosts in play
+  set_fact:
+    host_count: "{{ ansible_play_hosts | length }}"
+
+- name: assert | ensure that sentinel is active with multiple hosts in play
+  assert:
+    that: redis_sentinel.enabled
+  when: host_count != '1'
+
+- block:
+    - name: assert | ensure redis id has changed
+      assert:
+        that: |
+          '0123456789abcdefghijklmnopqrstuvwxyz1234' not in redis_sentinel.id
+
+    - name: assert | set fact for master
+      set_fact:
+        r_master: true
+      when: redis_sentinel.role == 'master'
+
+    - name: assert | set fact for not master
+      set_fact:
+        r_master: false
+      when: redis_sentinel.role != 'master'
+
+    - name: assert | set fact for slave
+      set_fact:
+        r_slave: true
+      when: redis_sentinel.role == 'slave'
+
+    - name: assert | set fact for not slave
+      set_fact:
+        r_slave: false
+      when: redis_sentinel.role != 'slave'
+
+    - name: assert | set fact for arbiter
+      set_fact:
+        r_arb: true
+      when: redis_sentinel.role == 'arbiter'
+
+    - name: assert | set fact for not arbiter
+      set_fact:
+        r_arb: false
+      when: redis_sentinel.role != 'arbiter'
+
+    # assert there is exactly one master when clustering
+    - block:
+
+        - name: assert | create dictionary of bootstrappers
+          set_fact:
+            bootstrappers: "{{ dict(keys|zip(values)) }}"
+          vars:
+            keys: "{{ ansible_play_hosts }}"
+            values: "{{ ansible_play_hosts|
+                        map('extract', hostvars, ['r_master']) |
+                        list }}"
+
+        - name: assert | create list of bootstrappers
+          set_fact:
+            master_list: "{{ bootstrappers | dict2items |
+                           selectattr('value') |
+                           map(attribute='key') |
+                           list }}"
+
+        - name: assert | that there is exactly one master
+          assert:
+            that: master_list | length == 1
+
+      run_once: true
+
+    # give the redis master ip to all hosts in play
+    - block:
+
+        - name: create dictionary for the master
+          set_fact:
+            redis_master_host: "{{ dict(keys|zip(values)) }}"
+          vars:
+            keys: "{{ ansible_play_hosts }}"
+            values: "{{ ansible_play_hosts|
+                        map('extract', hostvars, ['r_master'])|
+                        list }}"
+
+        - name: set fact for all hosts for the master
+          set_fact:
+            reference: "{{ redis_master_host|dict2items|
+                           selectattr('value')|
+                           map(attribute='key')|
+                           first }}"
+      run_once: true
+
+    - name: assert | set fact to select master host to share his ip
+      set_fact:
+        redis_master_on: "{{ item }}"
+      with_items: "{{ reference }}"
+      when: redis_master_on is undefined
+      run_once: true
+
+    - name: set fact for redis_ip again (molecule bug)
+      set_fact:
+        redis_ip: "{{ redis_ip }}"
+
+    - name: assert | set fact of master ip for all hosts
+      set_fact:
+        redis_master_ip: "{{ hostvars[redis_master_on]['redis_ip'] }}"
+
+  when: redis_sentinel.enabled
+
+- name: assert | set fact for every role when sentinal is disabled
+  set_fact:
+    r_master: false
+    r_slave: false
+    r_arb: false
+  when: not redis_sentinel.enabled

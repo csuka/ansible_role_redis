@@ -1,0 +1,44 @@
+---
+- name: sentinel | stat if log file exists
+  stat:
+    path: "{{ redis_sentinel_log }}"
+  register: redis_sentinel_touch
+
+- name: sentinel | touch log file
+  file:
+    path: "{{ redis_sentinel_log }}"
+    mode: '0774'
+    owner: redis
+    group: redis
+    state: touch
+  when: not redis_sentinel_touch.stat.exists
+
+- name: sentinel | service file
+  template:
+    src: sentinel.service.j2
+    dest: /usr/lib/systemd/system/redis-sentinel.service
+    mode: '0644'
+    group: root
+    owner: root
+  register: redis_sentinel_set_service
+
+- name: sentinel | daemon reload when service file changed
+  systemd:
+    daemon_reload: true
+  when: redis_sentinel_set_service.changed
+
+- name: sentinel | config
+  template:
+    src: sentinel.conf.j2
+    dest: "{{ redis_sentinel_conf }}"
+    mode: '0770'
+    owner: redis
+    group: root
+  register: redis_sentinel_config_set
+  when: redis_install.changed
+
+- name: sentinel | ensure sentinel is started and enabled
+  service:
+    name: redis-sentinel
+    state: started
+    enabled: true

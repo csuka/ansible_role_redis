@@ -1,0 +1,7 @@
+---
+redis_sentinel:
+  enabled: true
+  role: slave
+  ip: "{{ ansible_default_ipv4.address }}"
+  # the ID value must differ for each host
+  id: 1123456789abcdefghijklmnopqrstuvwxyz1235

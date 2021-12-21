@@ -1,0 +1,7 @@
+{{ ansible_managed | comment }}
+
+[redis]
+name=redis
+stream=remi-{{ redis_version }}
+profiles=common
+state=enabled

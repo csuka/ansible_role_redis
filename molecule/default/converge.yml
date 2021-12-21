@@ -1,0 +1,12 @@
+---
+- name: Converge
+  hosts: test-multi-01
+  tasks:
+    - name: install iproute
+      dnf:
+        name: iproute
+
+- name: Converge
+  hosts: test-multi-01
+  roles:
+    - ../redis
