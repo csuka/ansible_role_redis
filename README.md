@@ -1,5 +1,3 @@
-[![pipeline status](https://gitlab.com/kevin-ansible-roles/redis/badges/master/pipeline.svg)](https://gitlab.com/kevin-ansible-roles/rundeck/-/commits/master)
-
 # Ansible Role: Redis
 
 Installs [Redis](http://redis.io/) on EL 8, this role also includes configuring redis-sentinel.
