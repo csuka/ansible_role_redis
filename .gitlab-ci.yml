@@ -7,9 +7,8 @@ services:
     command: ["dockerd-entrypoint.sh"]
 
 variables:
-  DOCKER_HOST: tcp://docker:2375/
   DOCKER_DRIVER: overlay2
-  DOCKER_TLS_CERTDIR: ""
+  DOCKER_TLS_CERTDIR: "/certs"
 
 stages:
   - test
@@ -34,8 +33,7 @@ molecule:
     - python3 -m pip install "molecule[docker]"
     - ansible --version
     - molecule --version
-    - molecule test -s default  # single vm
-    - molecule test -s cluster  # cluster
+    - molecule test -s default  # single
   except:
     changes:
       - README.md

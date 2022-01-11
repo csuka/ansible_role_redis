@@ -1,12 +1,8 @@
-# Ansible Role: Redis
+# Redis
 
-Installs [Redis](http://redis.io/) on EL 8, this role also includes configuring redis-sentinel.
+An Ansible role that installs, configures and manages Redis for EL 8.
 
- * v1.0.0 - initial release
- * v1.0.1 - add molecule testing
- * v1.0.2 - improved single host play and fixed IP and included unixsocket by default
-
-## Requirement
+## Requirements
 
 Redis is memory exhaustive, so having one cpu core is sufficient.
 
@@ -196,11 +192,6 @@ redis_sentinel:
 ```
 
 Sentinel will update the configuration automatically with additional information about replicas (in order to retain the information in case of restart). The configuration is also rewritten every time a replica is promoted to master during a failover and every time a new Sentinel is discovered. The config file is only placed once, which is during the first run.
-
-## Cluster
-
-< todo >
-
 
 ## Example Playbook
 
