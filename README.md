@@ -20,7 +20,7 @@ When Redis is installed via remi's repo, version 6.0.x is installed. The EPEL re
 A file is placed in `/etc/dnf/modules.d/mysql.module`, to enable installation.
 
 ```yaml
-redis_version: 6.0
+redis_version: 6.2
 redis_remi_repo: true
 ```
 

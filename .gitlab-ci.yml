@@ -34,6 +34,7 @@ molecule:
     - ansible --version
     - molecule --version
     - molecule test -s default  # single
+    - molecule test -s cluster  # cluster
   except:
     changes:
       - README.md
